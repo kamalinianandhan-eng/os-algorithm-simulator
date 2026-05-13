@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operating System Algorithm Simulator</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --panel: rgba(255, 250, 244, 0.88);
+      --panel-strong: #fff9f2;
+      --text: #1e1b18;
+      --muted: #675f57;
+      --primary: #c05621;
+      --primary-soft: #f5c89d;
+      --accent: #2f6b5f;
+      --accent-soft: #c5e3da;
+      --danger: #a63d40;
+      --border: rgba(76, 56, 42, 0.14);
+      --shadow: 0 18px 48px rgba(72, 48, 32, 0.12);
+    }
+
+    body.dark {
+      --bg: #171a1d;
+      --panel: rgba(29, 35, 40, 0.9);
+      --panel-strong: #22292f;
+      --text: #eef2f4;
+      --muted: #adb8bf;
+      --primary: #f39a55;
+      --primary-soft: rgba(243, 154, 85, 0.18);
+      --accent: #73c7b4;
+      --accent-soft: rgba(115, 199, 180, 0.18);
+      --danger: #ef7b7b;
+      --border: rgba(255, 255, 255, 0.1);
+      --shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(240, 158, 97, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(61, 132, 116, 0.18), transparent 24%),
+        linear-gradient(145deg, var(--bg), #f8f3ec 52%, #efe5d8 100%);
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    body.dark {
+      background:
+        radial-gradient(circle at top left, rgba(243, 154, 85, 0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(115, 199, 180, 0.12), transparent 24%),
+        linear-gradient(145deg, #111417, #191f24 52%, #12171b 100%);
+    }
+
+    .shell {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 28px 18px 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.9fr);
+      gap: 20px;
+      align-items: stretch;
+      margin-bottom: 24px;
+    }
+
+    .hero-card,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero-card {
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -35% auto;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(192, 86, 33, 0.18), rgba(47, 107, 95, 0.08));
+      pointer-events: none;
+    }
+
+    h1, h2, h3 {
+      margin: 0 0 12px;
+      line-height: 1.1;
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.9rem);
+      max-width: 10ch;
+      letter-spacing: -0.05em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+      max-width: 58ch;
+    }
+
+    .hero-meta {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid var(--border);
+      font-size: 0.92rem;
+    }
+
+    body.dark .chip {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .hero-side {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .toggle-row,
+    .button-row,
+    .metric-grid,
+    .module-grid,
+    .control-grid,
+    .comparison-grid,
+    .graph-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .toggle-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .button-row {
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+
+    button,
+    .nav-card {
+      border: none;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    button {
+      padding: 11px 16px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 0.96rem;
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 10px 22px rgba(192, 86, 33, 0.22);
+    }
+
+    button.secondary {
+      background: var(--panel-strong);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+
+    button.ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+
+    button:hover,
+    .nav-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .module-grid {
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      margin-bottom: 24px;
+    }
+
+    .nav-card {
+      text-align: left;
+      padding: 18px;
+      border-radius: 22px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      min-height: 170px;
+    }
+
+    .nav-card.active {
+      outline: 2px solid var(--primary);
+      background: linear-gradient(180deg, var(--panel), var(--primary-soft));
+    }
+
+    .nav-card small {
+      color: var(--muted);
+      display: block;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .panel {
+      padding: 22px;
+    }
+
+    .module-view {
+      min-height: 560px;
+    }
+
+    .control-grid {
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      margin-bottom: 16px;
+    }
+
+    .field,
+    .field-inline {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field-inline {
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+    }
+
+    label {
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--panel-strong);
+      color: var(--text);
+      padding: 11px 12px;
+      border-radius: 12px;
+      font: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 92px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 16px;
+      background: var(--panel-strong);
+      font-size: 0.95rem;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+
+    th {
+      background: rgba(192, 86, 33, 0.12);
+      color: var(--text);
+    }
+
+    body.dark th {
+      background: rgba(243, 154, 85, 0.12);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .input-table-wrap,
+    .result-block {
+      margin-top: 16px;
+    }
+
+    .metric-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin: 16px 0;
+    }
+
+    .metric {
+      padding: 16px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, var(--panel-strong), rgba(255, 255, 255, 0.35));
+      border: 1px solid var(--border);
+    }
+
+    body.dark .metric {
+      background: linear-gradient(180deg, var(--panel-strong), rgba(255, 255, 255, 0.02));
+    }
+
+    .metric b {
+      font-size: 1.35rem;
+      display: block;
+      margin-top: 6px;
+    }
+
+    .pill-note,
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .status.safe,
+    .pill-note.good {
+      background: rgba(47, 107, 95, 0.15);
+      color: var(--accent);
+    }
+
+    .status.unsafe,
+    .pill-note.bad {
+      background: rgba(166, 61, 64, 0.14);
+      color: var(--danger);
+    }
+
+    .gantt {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: stretch;
+      margin-top: 12px;
+    }
+
+    .gantt-segment {
+      min-width: 84px;
+      flex: var(--weight, 1);
+      background: linear-gradient(160deg, var(--primary-soft), rgba(47, 107, 95, 0.08));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gantt-segment small {
+      color: var(--muted);
+      display: block;
+      margin-top: 6px;
+    }
+
+    .timeline {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 8px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .svg-wrap {
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 10px;
+      overflow-x: auto;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .square {
+      border-radius: 4px;
+    }
+
+    .comparison-grid,
+    .graph-grid {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      margin-top: 16px;
+    }
+
+    .small-muted {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .empty-state {
+      padding: 30px 16px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    @media (max-width: 920px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        padding: 18px 12px 42px;
+      }
+
+      .hero-card,
+      .panel,
+      .nav-card {
+        border-radius: 18px;
+      }
+
+      h1 {
+        max-width: 100%;
+      }
+
+      th,
+      td {
+        padding: 8px 9px;
+        font-size: 0.88rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-card">
+        <p class="pill-note good">Interactive SPA</p>
+        <h1>Operating System Algorithm Simulator</h1>
+        <p class="subtitle">
+          Explore CPU scheduling, deadlock handling, disk scheduling, and page replacement with dynamic inputs,
+          step-by-step outputs, responsive tables, and lightweight visualizations.
+        </p>
+        <div class="hero-meta">
+          <span class="chip">5 Modules</span>
+          <span class="chip">Responsive Layout</span>
+          <span class="chip">Offline Ready</span>
+          <span class="chip">Custom Visuals</span>
+        </div>
+      </div>
+      <div class="hero-side hero-card">
+        <div>
+          <h3>Quick Controls</h3>
+          <p class="small-muted">Switch sections instantly, try random-ready defaults, and toggle the visual theme.</p>
+        </div>
+        <div class="toggle-row">
+          <button id="homeBtn" class="secondary">Home</button>
+          <button id="themeBtn" class="ghost">Dark Mode</button>
+        </div>
+        <div class="small-muted">
+          Each module renders inside the same page for smooth SPA-style interaction with no reloads.
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Modules</h2>
+          <p>Choose a simulator to load its interactive controls and results panel.</p>
+        </div>
+      </div>
+      <div class="module-grid" id="navCards"></div>
+    </section>
+
+    <section class="panel module-view" id="app"></section>
+  </div>
+
+  <script>
+    const modules = [
+      {
+        id: "home",
+        title: "Home",
+        blurb: "Pick any algorithm family and start simulating from one page."
+      },
+      {
+        id: "cpu",
+        title: "CPU Scheduling",
+        blurb: "FCFS, SJF, SRTF, priority scheduling, and Round Robin with Gantt output."
+      },
+      {
+        id: "banker",
+        title: "Banker's Algorithm",
+        blurb: "Need matrix, safety check, safe sequence, and request grant validation."
+      },
+      {
+        id: "rag",
+        title: "Resource Allocation Graph",
+        blurb: "Build RAG and WFG visuals and detect deadlocks using cycle analysis."
+      },
+      {
+        id: "disk",
+        title: "Disk Scheduling",
+        blurb: "Compare FCFS, SCAN, C-SCAN, LOOK, and C-LOOK with seek paths."
+      },
+      {
+        id: "page",
+        title: "Page Replacement",
+        blurb: "FIFO, LRU, and Optimal side-by-side with faults, hits, and ratios."
+      }
+    ];
+
+    const state = {
+      active: "home"
+    };
+
+    const palette = ["#c05621", "#2f6b5f", "#d97706", "#0f766e", "#7c3aed", "#ca8a04", "#be185d", "#2563eb"];
+
+    function renderNav() {
+      const nav = document.getElementById("navCards");
+      nav.innerHTML = modules.filter(m => m.id !== "home").map(m => `
+        <button class="nav-card ${state.active === m.id ? "active" : ""}" data-target="${m.id}">
+          <h3>${m.title}</h3>
+          <small>${m.blurb}</small>
+        </button>
+      `).join("");
+      nav.querySelectorAll("[data-target]").forEach(card => {
+        card.addEventListener("click", () => {
+          state.active = card.dataset.target;
+          renderNav();
+          renderModule();
+        });
+      });
+    }
+
+    function createNumberInput(value = 0, min = 0, extra = "") {
+      return `<input type="number" min="${min}" value="${value}" ${extra}>`;
+    }
+
+    function tableFromRows(headers, rows) {
+      return `
+        <div class="input-table-wrap">
+          <table>
+            <thead>
+              <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function metricCards(items) {
+      return `
+        <div class="metric-grid">
+          ${items.map(item => `
+            <div class="metric">
+              <span>${item.label}</span>
+              <b>${item.value}</b>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function parseIntegerList(value) {
+      return value.split(/[\s,]+/).map(v => v.trim()).filter(Boolean).map(Number);
+    }
+
+    function isValidNonNegativeList(list) {
+      return list.length > 0 && list.every(Number.isFinite) && list.every(n => n >= 0);
+    }
+
+    function format(num) {
+      return Number.isFinite(num) ? Number(num).toFixed(2).replace(/\.00$/, "") : "-";
+    }
+
+    function colorForIndex(index) {
+      return palette[index % palette.length];
+    }
+
+    function buildHome() {
+      const cards = modules.filter(m => m.id !== "home").map((m, index) => `
+        <button class="nav-card" data-target="${m.id}" style="background:
+          linear-gradient(180deg, var(--panel), ${index % 2 === 0 ? "rgba(192,86,33,0.10)" : "rgba(47,107,95,0.10)"})">
+          <h3>${m.title}</h3>
+          <small>${m.blurb}</small>
+        </button>
+      `).join("");
+
+      return `
+        <div class="section-head">
+          <div>
+            <h2>Choose a Simulator</h2>
+            <p>Everything runs in-browser with auto-generated inputs, result tables, and visual summaries.</p>
+          </div>
+        </div>
+        <div class="module-grid">${cards}</div>
+        <div class="graph-grid">
+          <div class="panel">
+            <h3>What You Can Explore</h3>
+            <p class="small-muted">
+              Simulate process execution, deadlock safety, resource graphs, disk head movement, and memory management.
+              Each section is designed for classroom demonstrations and quick experimentation.
+            </p>
+          </div>
+          <div class="panel">
+            <h3>Built-In Features</h3>
+            <p class="small-muted">
+              Dynamic table generation, step-by-step computation, comparison metrics, graph rendering, validation, reset controls,
+              and optional dark mode.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCpuModule() {
+      return `
+        <div class="section-head">
+          <div>
+            <h2>CPU Scheduling</h2>
+            <p>Generate a process table, choose a scheduling policy, and visualize execution with a Gantt chart.</p>
+          </div>
+        </div>
+        <div class="control-grid">
+          <div class="field">
+            <label for="cpuCount">Number of Processes</label>
+            <input id="cpuCount" type="number" min="1" max="12" value="4">
+          </div>
+          <div class="field">
+            <label for="cpuAlgo">Algorithm</label>
+            <select id="cpuAlgo">
+              <option value="FCFS">FCFS</option>
+              <option value="SJF">SJF Non-preemptive</option>
+              <option value="SRTF">Shortest Remaining Time First</option>
+              <option value="PriorityNP">Priority Non-preemptive</option>
+              <option value="PriorityP">Priority Preemptive</option>
+              <option value="RR">Round Robin</option>
+            </select>
+          </div>
+          <div class="field" id="priorityModeWrap">
+            <label for="priorityMode">Priority Mode</label>
+            <select id="priorityMode">
+              <option value="lower">Lower value = higher priority</option>
+              <option value="higher">Higher value = higher priority</option>
+            </select>
+          </div>
+          <div class="field" id="quantumWrap">
+            <label for="timeQuantum">Time Quantum</label>
+            <input id="timeQuantum" type="number" min="1" value="2">
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="cpuGenerate">Generate Table</button>
+          <button id="cpuSample" class="secondary">Load Sample</button>
+          <button id="cpuReset" class="ghost">Reset</button>
+        </div>
+        <div id="cpuTableHost"></div>
+        <div class="button-row hidden" id="cpuActionRow">
+          <button id="cpuRun">Run Simulation</button>
+        </div>
+        <div id="cpuOutput" class="result-block"></div>
+      `;
+    }
+
+    function renderBankerModule() {
+      return `
+        <div class="section-head">
+          <div>
+            <h2>Banker's Algorithm</h2>
+            <p>Build allocation and maximum matrices, compute the need matrix, and test system safety.</p>
+          </div>
+        </div>
+        <div class="control-grid">
+          <div class="field">
+            <label for="bankerP">Processes</label>
+            <input id="bankerP" type="number" min="1" max="8" value="5">
+          </div>
+          <div class="field">
+            <label for="bankerR">Resource Types</label>
+            <input id="bankerR" type="number" min="1" max="5" value="3">
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="bankerGenerate">Generate Matrices</button>
+          <button id="bankerSample" class="secondary">Load Sample</button>
+          <button id="bankerReset" class="ghost">Reset</button>
+        </div>
+        <div id="bankerTables"></div>
+        <div class="button-row hidden" id="bankerActionRow">
+          <button id="bankerRun">Check Safety</button>
+          <button id="bankerRequestBtn" class="secondary">Evaluate Request</button>
+        </div>
+        <div id="bankerOutput" class="result-block"></div>
+      `;
+    }
+
+    function renderRagModule() {
+      return `
+        <div class="section-head">
+          <div>
+            <h2>Resource Allocation Graph</h2>
+            <p>Describe allocations and requests, then generate a RAG, a wait-for graph, and deadlock analysis.</p>
+          </div>
+        </div>
+        <div class="control-grid">
+          <div class="field">
+            <label for="ragP">Processes</label>
+            <input id="ragP" type="number" min="1" max="8" value="3">
+          </div>
+          <div class="field">
+            <label for="ragR">Resources</label>
+            <input id="ragR" type="number" min="1" max="6" value="2">
+          </div>
+          <div class="field">
+            <label for="ragInstances">Instances per Resource</label>
+            <input id="ragInstances" type="text" value="1,1">
+          </div>
+        </div>
+        <div class="graph-grid">
+          <div class="field">
+            <label for="ragAlloc">Allocation Edges (Resource->Process)</label>
+            <textarea id="ragAlloc">R1->P1
+R2->P2</textarea>
+          </div>
+          <div class="field">
+            <label for="ragReq">Request Edges (Process->Resource)</label>
+            <textarea id="ragReq">P1->R2
+P2->R1</textarea>
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="ragRun">Build Graph</button>
+          <button id="ragSample" class="secondary">Load Safe Example</button>
+          <button id="ragReset" class="ghost">Reset</button>
+        </div>
+        <div id="ragOutput" class="result-block"></div>
+      `;
+    }
+
+    function renderDiskModule() {
+      return `
+        <div class="section-head">
+          <div>
+            <h2>Disk Scheduling</h2>
+            <p>Compare seek sequences and total head movement across classic disk scheduling strategies.</p>
+          </div>
+        </div>
+        <div class="control-grid">
+          <div class="field">
+            <label for="diskTracks">Number of Tracks</label>
+            <input id="diskTracks" type="number" min="1" value="200">
+          </div>
+          <div class="field">
+            <label for="diskQueue">Request Queue</label>
+            <input id="diskQueue" type="text" value="82, 170, 43, 140, 24, 16, 190">
+          </div>
+          <div class="field">
+            <label for="diskHead">Initial Head Position</label>
+            <input id="diskHead" type="number" min="0" value="50">
+          </div>
+          <div class="field">
+            <label for="diskDirection">Direction</label>
+            <select id="diskDirection">
+              <option value="right">Right</option>
+              <option value="left">Left</option>
+            </select>
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="diskRun">Run Comparison</button>
+          <button id="diskSample" class="secondary">Load Alternate Sample</button>
+          <button id="diskReset" class="ghost">Reset</button>
+        </div>
+        <div id="diskOutput" class="result-block"></div>
+      `;
+    }
+
+    function renderPageModule() {
+      return `
+        <div class="section-head">
+          <div>
+            <h2>Page Replacement</h2>
+            <p>Step through FIFO, LRU, and Optimal replacement with frame-by-frame state tables.</p>
+          </div>
+        </div>
+        <div class="control-grid">
+          <div class="field">
+            <label for="pageFrames">Number of Frames</label>
+            <input id="pageFrames" type="number" min="1" max="8" value="3">
+          </div>
+          <div class="field">
+            <label for="pageRefs">Reference String</label>
+            <input id="pageRefs" type="text" value="7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2">
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="pageRun">Simulate</button>
+          <button id="pageSample" class="secondary">Load Alternate Sample</button>
+          <button id="pageReset" class="ghost">Reset</button>
+        </div>
+        <div id="pageOutput" class="result-block"></div>
+      `;
+    }
+
+    function renderModule() {
+      const app = document.getElementById("app");
+      if (state.active === "home") {
+        app.innerHTML = buildHome();
+        app.querySelectorAll("[data-target]").forEach(el => {
+          el.addEventListener("click", () => {
+            state.active = el.dataset.target;
+            renderNav();
+            renderModule();
+          });
+        });
+        return;
+      }
+
+      const views = {
+        cpu: renderCpuModule,
+        banker: renderBankerModule,
+        rag: renderRagModule,
+        disk: renderDiskModule,
+        page: renderPageModule
+      };
+      app.innerHTML = views[state.active]();
+      bindModuleLogic();
+    }
+
+    function bindModuleLogic() {
+      if (state.active === "cpu") bindCpu();
+      if (state.active === "banker") bindBanker();
+      if (state.active === "rag") bindRag();
+      if (state.active === "disk") bindDisk();
+      if (state.active === "page") bindPage();
+    }
+
+    function bindCpu() {
+      const count = document.getElementById("cpuCount");
+      const algo = document.getElementById("cpuAlgo");
+      const tableHost = document.getElementById("cpuTableHost");
+      const out = document.getElementById("cpuOutput");
+      const actionRow = document.getElementById("cpuActionRow");
+      const priorityModeWrap = document.getElementById("priorityModeWrap");
+      const quantumWrap = document.getElementById("quantumWrap");
+
+      function refreshOptionalFields() {
+        const isPriority = algo.value.startsWith("Priority");
+        const isRR = algo.value === "RR";
+        priorityModeWrap.classList.toggle("hidden", !isPriority);
+        quantumWrap.classList.toggle("hidden", !isRR);
+      }
+
+      function drawTable(data) {
+        const rows = data.map((item, index) => [
+          `P${index + 1}`,
+          `<input type="number" min="0" value="${item.arrival}" data-col="arrival" data-row="${index}">`,
+          `<input type="number" min="1" value="${item.burst}" data-col="burst" data-row="${index}">`,
+          `<input type="number" min="0" value="${item.priority}" data-col="priority" data-row="${index}">`
+        ]);
+        tableHost.innerHTML = `
+          ${tableFromRows(["Process", "Arrival Time", "Burst Time", "Priority"], rows)}
+        `;
+        actionRow.classList.remove("hidden");
+      }
+
+      function generatedData() {
+        const n = Math.max(1, Math.min(12, Number(count.value) || 1));
+        return Array.from({ length: n }, (_, i) => ({
+          arrival: i % 3,
+          burst: 2 + (i % 5),
+          priority: (i % 4) + 1
+        }));
+      }
+
+      function readProcesses() {
+        const arrivals = [...tableHost.querySelectorAll('[data-col="arrival"]')].map(x => Number(x.value));
+        const bursts = [...tableHost.querySelectorAll('[data-col="burst"]')].map(x => Number(x.value));
+        const priorities = [...tableHost.querySelectorAll('[data-col="priority"]')].map(x => Number(x.value));
+        if (!arrivals.length) throw new Error("Generate the process table first.");
+        if (arrivals.some(v => !Number.isFinite(v) || v < 0)) throw new Error("Arrival times must be non-negative.");
+        if (bursts.some(v => !Number.isFinite(v) || v <= 0)) throw new Error("Burst times must be greater than zero.");
+        if (priorities.some(v => !Number.isFinite(v) || v < 0)) throw new Error("Priority values must be non-negative.");
+        return arrivals.map((arrival, i) => ({
+          id: `P${i + 1}`,
+          arrival,
+          burst: bursts[i],
+          priority: priorities[i]
+        }));
+      }
+
+      document.getElementById("cpuGenerate").addEventListener("click", () => {
+        drawTable(generatedData());
+        out.innerHTML = "";
+      });
+
+      document.getElementById("cpuSample").addEventListener("click", () => {
+        count.value = 5;
+        drawTable([
+          { arrival: 0, burst: 7, priority: 3 },
+          { arrival: 2, burst: 4, priority: 1 },
+          { arrival: 4, burst: 1, priority: 4 },
+          { arrival: 5, burst: 4, priority: 2 },
+          { arrival: 6, burst: 6, priority: 2 }
+        ]);
+        out.innerHTML = "";
+      });
+
+      document.getElementById("cpuReset").addEventListener("click", () => {
+        tableHost.innerHTML = "";
+        out.innerHTML = "";
+        actionRow.classList.add("hidden");
+        count.value = 4;
+        algo.value = "FCFS";
+        document.getElementById("timeQuantum").value = 2;
+        document.getElementById("priorityMode").value = "lower";
+        refreshOptionalFields();
+      });
+
+      algo.addEventListener("change", refreshOptionalFields);
+      refreshOptionalFields();
+
+      document.getElementById("cpuRun").addEventListener("click", () => {
+        try {
+          const processes = readProcesses();
+          const priorityMode = document.getElementById("priorityMode").value;
+          const quantum = Number(document.getElementById("timeQuantum").value);
+          if (algo.value === "RR" && (!Number.isFinite(quantum) || quantum <= 0)) {
+            throw new Error("Time quantum must be greater than zero.");
+          }
+          const result = simulateCpu(processes, algo.value, priorityMode, quantum);
+          out.innerHTML = renderCpuResult(result, algo.value);
+        } catch (error) {
+          out.innerHTML = `<p class="status unsafe">${error.message}</p>`;
+        }
+      });
+    }
+
+    function comparePriority(a, b, mode) {
+      return mode === "lower" ? a.priority - b.priority : b.priority - a.priority;
+    }
+
+    function simulateCpu(processes, algorithm, priorityMode, quantum) {
+      const items = processes.map(p => ({ ...p, remaining: p.burst, completion: 0 }));
+      const timeline = [];
+      let time = 0;
+      let completed = 0;
+
+      function addSegment(pid, start, end) {
+        if (start === end) return;
+        const last = timeline[timeline.length - 1];
+        if (last && last.id === pid && last.end === start) {
+          last.end = end;
+        } else {
+          timeline.push({ id: pid, start, end });
+        }
+      }
+
+      function availableAt(t) {
+        return items.filter(p => p.arrival <= t && p.remaining > 0);
+      }
+
+      if (algorithm === "FCFS" || algorithm === "SJF" || algorithm === "PriorityNP") {
+        const ready = [];
+        const order = [...items].sort((a, b) => a.arrival - b.arrival || Number(a.id.slice(1)) - Number(b.id.slice(1)));
+        let index = 0;
+        while (completed < items.length) {
+          while (index < order.length && order[index].arrival <= time) ready.push(order[index++]);
+          if (!ready.length) {
+            const nextArrival = order[index]?.arrival;
+            addSegment("Idle", time, nextArrival);
+            time = nextArrival;
+            continue;
+          }
+
+          let current;
+          if (algorithm === "FCFS") {
+            current = ready.shift();
+          } else if (algorithm === "SJF") {
+            ready.sort((a, b) => a.burst - b.burst || a.arrival - b.arrival || Number(a.id.slice(1)) - Number(b.id.slice(1)));
+            current = ready.shift();
+          } else {
+            ready.sort((a, b) => comparePriority(a, b, priorityMode) || a.arrival - b.arrival || Number(a.id.slice(1)) - Number(b.id.slice(1)));
+            current = ready.shift();
+          }
+
+          const start = time;
+          time += current.remaining;
+          current.remaining = 0;
+          current.completion = time;
+          completed++;
+          addSegment(current.id, start, time);
+        }
+      } else if (algorithm === "RR") {
+        const queue = [];
+        const order = [...items].sort((a, b) => a.arrival - b.arrival || Number(a.id.slice(1)) - Number(b.id.slice(1)));
+        let index = 0;
+        while (completed < items.length) {
+          while (index < order.length && order[index].arrival <= time) queue.push(order[index++]);
+          if (!queue.length) {
+            const nextArrival = order[index]?.arrival;
+            addSegment("Idle", time, nextArrival);
+            time = nextArrival;
+            while (index < order.length && order[index].arrival <= time) queue.push(order[index++]);
+          }
+          const current = queue.shift();
+          if (!current) continue;
+          const slice = Math.min(quantum, current.remaining);
+          const start = time;
+          time += slice;
+          current.remaining -= slice;
+          addSegment(current.id, start, time);
+          while (index < order.length && order[index].arrival <= time) queue.push(order[index++]);
+          if (current.remaining > 0) queue.push(current);
+          else {
+            current.completion = time;
+            completed++;
+          }
+        }
+      } else {
+        while (completed < items.length) {
+          const ready = availableAt(time);
+          if (!ready.length) {
+            const nextArrival = Math.min(...items.filter(p => p.remaining > 0).map(p => p.arrival));
+            addSegment("Idle", time, nextArrival);
+            time = nextArrival;
+            continue;
+          }
+          let current;
+          if (algorithm === "SRTF") {
+            ready.sort((a, b) => a.remaining - b.remaining || a.arrival - b.arrival || Number(a.id.slice(1)) - Number(b.id.slice(1)));
+            current = ready[0];
+          } else {
+            ready.sort((a, b) => comparePriority(a, b, priorityMode) || a.arrival - b.arrival || Number(a.id.slice(1)) - Number(b.id.slice(1)));
+            current = ready[0];
+          }
+          const start = time;
+          time += 1;
+          current.remaining -= 1;
+          addSegment(current.id, start, time);
+          if (current.remaining === 0) {
+            current.completion = time;
+            completed++;
+          }
+        }
+      }
+
+      const rows = items.map(p => {
+        const turnaround = p.completion - p.arrival;
+        const waiting = turnaround - p.burst;
+        return {
+          ...p,
+          turnaround,
+          waiting
+        };
+      });
+
+      return {
+        timeline,
+        rows,
+        avgWaiting: rows.reduce((sum, p) => sum + p.waiting, 0) / rows.length,
+        avgTurnaround: rows.reduce((sum, p) => sum + p.turnaround, 0) / rows.length
+      };
+    }
+
+    function renderCpuResult(result, algorithm) {
+      const gantt = `
+        <div class="result-block">
+          <h3>Gantt Chart</h3>
+          <div class="gantt">
+            ${result.timeline.map((seg, i) => `
+              <div class="gantt-segment" style="--weight:${Math.max(seg.end - seg.start, 1)}; background:
+                linear-gradient(160deg, ${seg.id === "Idle" ? "rgba(166,61,64,0.15)" : colorForIndex(i) + "22"}, rgba(255,255,255,0.12))">
+                <strong>${seg.id}</strong>
+                <small>${seg.start} - ${seg.end}</small>
+              </div>
+            `).join("")}
+          </div>
+          <div class="timeline">
+            ${result.timeline.map(seg => `<span>${seg.start}</span>`).join("")}
+            <span>${result.timeline[result.timeline.length - 1]?.end ?? 0}</span>
+          </div>
+        </div>
+      `;
+
+      const rows = result.rows.map(p => [p.id, p.arrival, p.burst, p.completion, p.waiting, p.turnaround]);
+      return `
+        <p class="pill-note good">${algorithm} simulation completed</p>
+        ${metricCards([
+          { label: "Average Waiting Time", value: format(result.avgWaiting) },
+          { label: "Average Turnaround Time", value: format(result.avgTurnaround) },
+          { label: "Completed Processes", value: result.rows.length }
+        ])}
+        ${gantt}
+        <div class="result-block">
+          <h3>Computation Table</h3>
+          ${tableFromRows(
+            ["Process", "Arrival Time", "Burst Time", "Completion Time", "Waiting Time", "Turnaround Time"],
+            rows
+          )}
+        </div>
+      `;
+    }
+
+    function bindBanker() {
+      const tables = document.getElementById("bankerTables");
+      const output = document.getElementById("bankerOutput");
+      const actionRow = document.getElementById("bankerActionRow");
+
+      function generateMatrixTables(pCount, rCount, preset) {
+        const allocation = preset?.allocation || Array.from({ length: pCount }, () => Array.from({ length: rCount }, () => 0));
+        const max = preset?.max || Array.from({ length: pCount }, (_, i) => Array.from({ length: rCount }, (_, j) => (i + j) % 4 + 1));
+        const available = preset?.available || Array.from({ length: rCount }, (_, i) => i + 1);
+        const requestProcess = preset?.requestProcess || 1;
+        const requestVector = preset?.requestVector || Array.from({ length: rCount }, () => 0);
+
+        tables.innerHTML = `
+          <div class="graph-grid">
+            <div>
+              <h3>Allocation Matrix</h3>
+              ${editableMatrix("alloc", pCount, rCount, allocation)}
+            </div>
+            <div>
+              <h3>Max Matrix</h3>
+              ${editableMatrix("max", pCount, rCount, max)}
+            </div>
+          </div>
+          <div class="graph-grid">
+            <div>
+              <h3>Available Vector</h3>
+              ${editableVector("avail", rCount, available)}
+            </div>
+            <div>
+              <h3>Additional Request</h3>
+              <div class="control-grid">
+                <div class="field">
+                  <label for="requestPid">Process ID</label>
+                  <select id="requestPid">
+                    ${Array.from({ length: pCount }, (_, i) => `<option value="${i}" ${requestProcess === i ? "selected" : ""}>P${i + 1}</option>`).join("")}
+                  </select>
+                </div>
+              </div>
+              ${editableVector("req", rCount, requestVector)}
+            </div>
+          </div>
+        `;
+        actionRow.classList.remove("hidden");
+      }
+
+      document.getElementById("bankerGenerate").addEventListener("click", () => {
+        const p = Math.max(1, Math.min(8, Number(document.getElementById("bankerP").value) || 1));
+        const r = Math.max(1, Math.min(5, Number(document.getElementById("bankerR").value) || 1));
+        generateMatrixTables(p, r);
+        output.innerHTML = "";
+      });
+
+      document.getElementById("bankerSample").addEventListener("click", () => {
+        document.getElementById("bankerP").value = 5;
+        document.getElementById("bankerR").value = 3;
+        generateMatrixTables(5, 3, {
+          allocation: [
+            [0, 1, 0],
+            [2, 0, 0],
+            [3, 0, 2],
+            [2, 1, 1],
+            [0, 0, 2]
+          ],
+          max: [
+            [7, 5, 3],
+            [3, 2, 2],
+            [9, 0, 2],
+            [2, 2, 2],
+            [4, 3, 3]
+          ],
+          available: [3, 3, 2],
+          requestProcess: 1,
+          requestVector: [1, 0, 2]
+        });
+        output.innerHTML = "";
+      });
+
+      document.getElementById("bankerReset").addEventListener("click", () => {
+        tables.innerHTML = "";
+        output.innerHTML = "";
+        actionRow.classList.add("hidden");
+        document.getElementById("bankerP").value = 5;
+        document.getElementById("bankerR").value = 3;
+      });
+
+      function readMatrix(prefix, rows, cols) {
+        const matrix = [];
+        for (let i = 0; i < rows; i++) {
+          const row = [];
+          for (let j = 0; j < cols; j++) {
+            const input = document.querySelector(`[data-key="${prefix}-${i}-${j}"]`);
+            const value = Number(input?.value);
+            if (!Number.isFinite(value) || value < 0) throw new Error("All matrix values must be non-negative.");
+            row.push(value);
+          }
+          matrix.push(row);
+        }
+        return matrix;
+      }
+
+      function readVector(prefix, size) {
+        const vector = [];
+        for (let i = 0; i < size; i++) {
+          const value = Number(document.querySelector(`[data-key="${prefix}-${i}"]`)?.value);
+          if (!Number.isFinite(value) || value < 0) throw new Error("Vector values must be non-negative.");
+          vector.push(value);
+        }
+        return vector;
+      }
+
+      function computeSafety(allocation, max, available) {
+        const need = max.map((row, i) => row.map((value, j) => value - allocation[i][j]));
+        if (need.some(row => row.some(v => v < 0))) throw new Error("Max matrix must be greater than or equal to allocation.");
+        const work = [...available];
+        const finish = Array(allocation.length).fill(false);
+        const safeSequence = [];
+        let progress = true;
+        while (progress) {
+          progress = false;
+          for (let i = 0; i < allocation.length; i++) {
+            if (!finish[i] && need[i].every((v, j) => v <= work[j])) {
+              for (let j = 0; j < work.length; j++) work[j] += allocation[i][j];
+              finish[i] = true;
+              safeSequence.push(`P${i + 1}`);
+              progress = true;
+            }
+          }
+        }
+        return { need, safe: finish.every(Boolean), safeSequence };
+      }
+
+      document.getElementById("bankerRun").addEventListener("click", () => {
+        try {
+          const p = Number(document.getElementById("bankerP").value);
+          const r = Number(document.getElementById("bankerR").value);
+          const allocation = readMatrix("alloc", p, r);
+          const max = readMatrix("max", p, r);
+          const available = readVector("avail", r);
+          const result = computeSafety(allocation, max, available);
+          output.innerHTML = renderBankerResult(result);
+        } catch (error) {
+          output.innerHTML = `<p class="status unsafe">${error.message}</p>`;
+        }
+      });
+
+      document.getElementById("bankerRequestBtn").addEventListener("click", () => {
+        try {
+          const p = Number(document.getElementById("bankerP").value);
+          const r = Number(document.getElementById("bankerR").value);
+          const allocation = readMatrix("alloc", p, r);
+          const max = readMatrix("max", p, r);
+          const available = readVector("avail", r);
+          const request = readVector("req", r);
+          const pid = Number(document.getElementById("requestPid").value);
+          const base = computeSafety(allocation, max, available);
+          if (request.some((v, i) => v > base.need[pid][i])) throw new Error("Request exceeds the process need.");
+          if (request.some((v, i) => v > available[i])) {
+            output.innerHTML = renderBankerResult(base) + `<p class="status unsafe">Request cannot be granted immediately because resources are unavailable.</p>`;
+            return;
+          }
+          const trialAllocation = allocation.map(row => [...row]);
+          const trialAvailable = [...available];
+          for (let i = 0; i < r; i++) {
+            trialAllocation[pid][i] += request[i];
+            trialAvailable[i] -= request[i];
+          }
+          const trial = computeSafety(trialAllocation, max, trialAvailable);
+          output.innerHTML = renderBankerResult(trial) + `
+            <p class="status ${trial.safe ? "safe" : "unsafe"}">
+              ${trial.safe ? "Request can be granted immediately." : "Request cannot be granted because it leads to an unsafe state."}
+            </p>
+          `;
+        } catch (error) {
+          output.innerHTML = `<p class="status unsafe">${error.message}</p>`;
+        }
+      });
+    }
+
+    function editableMatrix(prefix, rows, cols, values) {
+      return tableFromRows(
+        ["Process", ...Array.from({ length: cols }, (_, i) => `R${i + 1}`)],
+        Array.from({ length: rows }, (_, i) => [
+          `P${i + 1}`,
+          ...Array.from({ length: cols }, (_, j) => `<input type="number" min="0" value="${values[i][j]}" data-key="${prefix}-${i}-${j}">`)
+        ])
+      );
+    }
+
+    function editableVector(prefix, size, values) {
+      return tableFromRows(
+        Array.from({ length: size }, (_, i) => `R${i + 1}`),
+        [Array.from({ length: size }, (_, i) => `<input type="number" min="0" value="${values[i]}" data-key="${prefix}-${i}">`)]
+      );
+    }
+
+    function renderBankerResult(result) {
+      const needRows = result.need.map((row, i) => [`P${i + 1}`, ...row]);
+      return `
+        <p class="status ${result.safe ? "safe" : "unsafe"}">
+          ${result.safe ? "System is in a safe state." : "System is in an unsafe state."}
+        </p>
+        ${metricCards([
+          { label: "Processes Completed in Safety Check", value: result.safeSequence.length },
+          { label: "Safe Sequence Length", value: result.safeSequence.length },
+          { label: "State", value: result.safe ? "Safe" : "Unsafe" }
+        ])}
+        <div class="result-block">
+          <h3>Need Matrix</h3>
+          ${tableFromRows(["Process", ...result.need[0].map((_, i) => `R${i + 1}`)], needRows)}
+        </div>
+        <div class="result-block">
+          <h3>Safe Sequence</h3>
+          <p class="small-muted">${result.safeSequence.length ? result.safeSequence.join(" → ") : "No safe sequence found."}</p>
+        </div>
+      `;
+    }
+
+    function bindRag() {
+      const out = document.getElementById("ragOutput");
+
+      document.getElementById("ragSample").addEventListener("click", () => {
+        document.getElementById("ragP").value = 3;
+        document.getElementById("ragR").value = 2;
+        document.getElementById("ragInstances").value = "1,1";
+        document.getElementById("ragAlloc").value = "R1->P1";
+        document.getElementById("ragReq").value = "P2->R1\nP3->R2";
+        out.innerHTML = "";
+      });
+
+      document.getElementById("ragReset").addEventListener("click", () => {
+        document.getElementById("ragP").value = 3;
+        document.getElementById("ragR").value = 2;
+        document.getElementById("ragInstances").value = "1,1";
+        document.getElementById("ragAlloc").value = "R1->P1\nR2->P2";
+        document.getElementById("ragReq").value = "P1->R2\nP2->R1";
+        out.innerHTML = "";
+      });
+
+      document.getElementById("ragRun").addEventListener("click", () => {
+        try {
+          const pCount = Number(document.getElementById("ragP").value);
+          const rCount = Number(document.getElementById("ragR").value);
+          const instances = parseIntegerList(document.getElementById("ragInstances").value);
+          if (instances.length !== rCount || !isValidNonNegativeList(instances) || instances.some(v => v < 1)) {
+            throw new Error("Provide one positive instance count for each resource.");
+          }
+          const allocation = parseEdges(document.getElementById("ragAlloc").value, "alloc");
+          const requests = parseEdges(document.getElementById("ragReq").value, "req");
+          validateGraphEdges(allocation, requests, pCount, rCount);
+          const result = analyzeRag(pCount, rCount, instances, allocation, requests);
+          out.innerHTML = renderRagResult(result, pCount, rCount);
+        } catch (error) {
+          out.innerHTML = `<p class="status unsafe">${error.message}</p>`;
+        }
+      });
+    }
+
+    function parseEdges(text, type) {
+      return text.split(/\n+/).map(line => line.trim()).filter(Boolean).map(line => {
+        const match = line.match(/^(P\d+|R\d+)\s*->\s*(P\d+|R\d+)$/i);
+        if (!match) throw new Error(`Invalid edge format: "${line}"`);
+        return { from: match[1].toUpperCase(), to: match[2].toUpperCase(), type };
+      });
+    }
+
+    function validateGraphEdges(allocation, requests, pCount, rCount) {
+      allocation.forEach(edge => {
+        if (!edge.from.startsWith("R") || !edge.to.startsWith("P")) throw new Error("Allocation edges must be Resource -> Process.");
+      });
+      requests.forEach(edge => {
+        if (!edge.from.startsWith("P") || !edge.to.startsWith("R")) throw new Error("Request edges must be Process -> Resource.");
+      });
+      [...allocation, ...requests].forEach(edge => {
+        const fromNum = Number(edge.from.slice(1));
+        const toNum = Number(edge.to.slice(1));
+        if (edge.from.startsWith("P") && (fromNum < 1 || fromNum > pCount)) throw new Error(`Unknown process in edge ${edge.from}.`);
+        if (edge.to.startsWith("P") && (toNum < 1 || toNum > pCount)) throw new Error(`Unknown process in edge ${edge.to}.`);
+        if (edge.from.startsWith("R") && (fromNum < 1 || fromNum > rCount)) throw new Error(`Unknown resource in edge ${edge.from}.`);
+        if (edge.to.startsWith("R") && (toNum < 1 || toNum > rCount)) throw new Error(`Unknown resource in edge ${edge.to}.`);
+      });
+    }
+
+    function analyzeRag(pCount, rCount, instances, allocation, requests) {
+      const allocationsByResource = {};
+      allocation.forEach(edge => {
+        allocationsByResource[edge.from] = allocationsByResource[edge.from] || [];
+        allocationsByResource[edge.from].push(edge.to);
+      });
+      Object.entries(allocationsByResource).forEach(([res, assigned]) => {
+        const resourceIndex = Number(res.slice(1)) - 1;
+        if (assigned.length > instances[resourceIndex]) throw new Error(`${res} has more allocations than available instances.`);
+      });
+
+      const wfgEdges = [];
+      requests.forEach(req => {
+        const holders = allocationsByResource[req.to] || [];
+        holders.forEach(holder => {
+          if (holder !== req.from) wfgEdges.push({ from: req.from, to: holder });
+        });
+      });
+
+      const graph = {};
+      for (let i = 1; i <= pCount; i++) graph[`P${i}`] = [];
+      wfgEdges.forEach(edge => graph[edge.from].push(edge.to));
+
+      const visited = new Set();
+      const stack = new Set();
+      let cycleNodes = [];
+
+      function dfs(node, path) {
+        visited.add(node);
+        stack.add(node);
+        path.push(node);
+        for (const next of graph[node]) {
+          if (!visited.has(next)) {
+            if (dfs(next, path)) return true;
+          } else if (stack.has(next)) {
+            const idx = path.indexOf(next);
+            cycleNodes = path.slice(idx).concat(next);
+            return true;
+          }
+        }
+        path.pop();
+        stack.delete(node);
+        return false;
+      }
+
+      const deadlock = Object.keys(graph).some(node => !visited.has(node) && dfs(node, []));
+      return { allocation, requests, wfgEdges, deadlock, cycleNodes, instances };
+    }
+
+    function renderGraphSvg(pCount, rCount, edges, instances, type) {
+      const processY = 90;
+      const resourceY = 250;
+      const width = Math.max(700, Math.max(pCount, rCount) * 120 + 120);
+      const pPos = {};
+      const rPos = {};
+      for (let i = 1; i <= pCount; i++) pPos[`P${i}`] = { x: 80 + (i - 1) * ((width - 160) / Math.max(pCount - 1, 1)), y: processY };
+      for (let i = 1; i <= rCount; i++) rPos[`R${i}`] = { x: 80 + (i - 1) * ((width - 160) / Math.max(rCount - 1, 1)), y: resourceY };
+
+      const nodeMarkup = [
+        ...Object.entries(pPos).map(([id, pos], i) => `
+          <g>
+            <circle cx="${pos.x}" cy="${pos.y}" r="26" fill="${colorForIndex(i)}22" stroke="${colorForIndex(i)}" stroke-width="2"></circle>
+            <text x="${pos.x}" y="${pos.y + 5}" text-anchor="middle" font-size="13" fill="currentColor">${id}</text>
+          </g>
+        `),
+        ...Object.entries(rPos).map(([id, pos], i) => `
+          <g>
+            <rect x="${pos.x - 28}" y="${pos.y - 24}" width="56" height="48" rx="10" fill="${colorForIndex(i + 3)}22" stroke="${colorForIndex(i + 3)}" stroke-width="2"></rect>
+            <text x="${pos.x}" y="${pos.y + 4}" text-anchor="middle" font-size="13" fill="currentColor">${id}${type === "rag" ? `(${instances[i]})` : ""}</text>
+          </g>
+        `)
+      ].join("");
+
+      const edgeMarkup = edges.map((edge, index) => {
+        const from = pPos[edge.from] || rPos[edge.from];
+        const to = pPos[edge.to] || rPos[edge.to];
+        const color = edge.from.startsWith("P") ? "#c05621" : "#2f6b5f";
+        return `
+          <g>
+            <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${color}" stroke-width="2.2" marker-end="url(#arrow-${type}-${index % 2})"></line>
+          </g>
+        `;
+      }).join("");
+
+      return `
+        <div class="svg-wrap">
+          <svg viewBox="0 0 ${width} 340" width="100%" height="320" style="color: var(--text);">
+            <defs>
+              <marker id="arrow-${type}-0" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L9,3 z" fill="#c05621"></path>
+              </marker>
+              <marker id="arrow-${type}-1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L9,3 z" fill="#2f6b5f"></path>
+              </marker>
+            </defs>
+            ${edgeMarkup}
+            ${nodeMarkup}
+          </svg>
+        </div>
+      `;
+    }
+
+    function renderWfgSvg(processes, edges) {
+      const width = Math.max(620, processes.length * 120 + 100);
+      const centerX = width / 2;
+      const centerY = 170;
+      const radius = Math.min(120, 30 + processes.length * 12);
+      const positions = {};
+      processes.forEach((pid, index) => {
+        const angle = (Math.PI * 2 * index) / processes.length - Math.PI / 2;
+        positions[pid] = {
+          x: centerX + radius * Math.cos(angle),
+          y: centerY + radius * Math.sin(angle)
+        };
+      });
+
+      return `
+        <div class="svg-wrap">
+          <svg viewBox="0 0 ${width} 340" width="100%" height="320" style="color: var(--text);">
+            <defs>
+              <marker id="arrow-wfg" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L9,3 z" fill="#c05621"></path>
+              </marker>
+            </defs>
+            ${edges.map(edge => `
+              <line x1="${positions[edge.from].x}" y1="${positions[edge.from].y}" x2="${positions[edge.to].x}" y2="${positions[edge.to].y}"
+                stroke="#c05621" stroke-width="2.1" marker-end="url(#arrow-wfg)"></line>
+            `).join("")}
+            ${processes.map((pid, i) => `
+              <g>
+                <circle cx="${positions[pid].x}" cy="${positions[pid].y}" r="28" fill="${colorForIndex(i)}22" stroke="${colorForIndex(i)}" stroke-width="2"></circle>
+                <text x="${positions[pid].x}" y="${positions[pid].y + 5}" text-anchor="middle" font-size="13" fill="currentColor">${pid}</text>
+              </g>
+            `).join("")}
+          </svg>
+        </div>
+      `;
+    }
+
+    function renderRagResult(result, pCount, rCount) {
+      const processes = Array.from({ length: pCount }, (_, i) => `P${i + 1}`);
+      const allEdges = [...result.allocation, ...result.requests];
+      return `
+        <p class="status ${result.deadlock ? "unsafe" : "safe"}">
+          ${result.deadlock ? "Deadlock detected." : "No deadlock detected."}
+        </p>
+        ${metricCards([
+          { label: "Allocation Edges", value: result.allocation.length },
+          { label: "Request Edges", value: result.requests.length },
+          { label: "Wait-For Edges", value: result.wfgEdges.length }
+        ])}
+        <div class="graph-grid">
+          <div>
+            <h3>Resource Allocation Graph</h3>
+            ${renderGraphSvg(pCount, rCount, allEdges, result.instances, "rag")}
+            <div class="legend">
+              <span><i class="dot" style="background:#c05621"></i> Request Edge</span>
+              <span><i class="dot square" style="background:#2f6b5f"></i> Allocation Edge</span>
+            </div>
+          </div>
+          <div>
+            <h3>Wait-For Graph</h3>
+            ${renderWfgSvg(processes, result.wfgEdges)}
+          </div>
+        </div>
+        <div class="graph-grid">
+          <div class="panel">
+            <h3>Cycle Analysis</h3>
+            <p class="small-muted">
+              ${result.deadlock
+                ? `Cycle found: ${result.cycleNodes.join(" → ")}`
+                : "No circular wait exists in the derived wait-for graph."}
+            </p>
+          </div>
+          <div class="panel">
+            <h3>Suggestions</h3>
+            <p class="small-muted">
+              Deadlock prevention breaks one of the Coffman conditions. Deadlock avoidance checks whether a new allocation keeps the system safe.
+              Deadlock recovery can use preemption, rollback, or process termination after detection.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    function bindDisk() {
+      const out = document.getElementById("diskOutput");
+
+      document.getElementById("diskSample").addEventListener("click", () => {
+        document.getElementById("diskTracks").value = 200;
+        document.getElementById("diskQueue").value = "95, 180, 34, 119, 11, 123, 62, 64";
+        document.getElementById("diskHead").value = 50;
+        document.getElementById("diskDirection").value = "left";
+        out.innerHTML = "";
+      });
+
+      document.getElementById("diskReset").addEventListener("click", () => {
+        document.getElementById("diskTracks").value = 200;
+        document.getElementById("diskQueue").value = "82, 170, 43, 140, 24, 16, 190";
+        document.getElementById("diskHead").value = 50;
+        document.getElementById("diskDirection").value = "right";
+        out.innerHTML = "";
+      });
+
+      document.getElementById("diskRun").addEventListener("click", () => {
+        try {
+          const tracks = Number(document.getElementById("diskTracks").value);
+          const queue = parseIntegerList(document.getElementById("diskQueue").value);
+          const head = Number(document.getElementById("diskHead").value);
+          const direction = document.getElementById("diskDirection").value;
+          if (!Number.isFinite(tracks) || tracks <= 0) throw new Error("Number of tracks must be positive.");
+          if (!isValidNonNegativeList(queue)) throw new Error("Request queue must contain valid non-negative numbers.");
+          if (!Number.isFinite(head) || head < 0 || head >= tracks) throw new Error("Initial head position must be within track range.");
+          if (queue.some(v => v >= tracks)) throw new Error("All requests must lie within the available track range.");
+          const result = runDiskAlgorithms(queue, head, tracks, direction);
+          out.innerHTML = renderDiskResult(result, tracks);
+        } catch (error) {
+          out.innerHTML = `<p class="status unsafe">${error.message}</p>`;
+        }
+      });
+    }
+
+    function headMovement(sequence) {
+      let total = 0;
+      for (let i = 1; i < sequence.length; i++) total += Math.abs(sequence[i] - sequence[i - 1]);
+      return total;
+    }
+
+    function runDiskAlgorithms(queue, head, tracks, direction) {
+      const left = queue.filter(v => v < head).sort((a, b) => a - b);
+      const right = queue.filter(v => v >= head).sort((a, b) => a - b);
+      const end = tracks - 1;
+      const results = {};
+
+      const fcfs = [head, ...queue];
+      results.FCFS = { sequence: fcfs, movement: headMovement(fcfs), note: "Simple and fair by arrival order." };
+
+      const scanSeq = direction === "right"
+        ? [head, ...right, end, ...left.slice().reverse()]
+        : [head, ...left.slice().reverse(), 0, ...right];
+      results.SCAN = { sequence: sanitizeDiskSequence(scanSeq), movement: headMovement(sanitizeDiskSequence(scanSeq)), note: "Elevator-style sweep reduces random movement." };
+
+      const cscanSeq = direction === "right"
+        ? [head, ...right, end, 0, ...left]
+        : [head, ...left.slice().reverse(), 0, end, ...right.slice().reverse()];
+      results["C-SCAN"] = { sequence: sanitizeDiskSequence(cscanSeq), movement: headMovement(sanitizeDiskSequence(cscanSeq)), note: "Uniform wait time by serving in one circular direction." };
+
+      const lookSeq = direction === "right"
+        ? [head, ...right, ...left.slice().reverse()]
+        : [head, ...left.slice().reverse(), ...right];
+      results.LOOK = { sequence: sanitizeDiskSequence(lookSeq), movement: headMovement(sanitizeDiskSequence(lookSeq)), note: "Like SCAN, but stops at the last actual request." };
+
+      const clookSeq = direction === "right"
+        ? [head, ...right, ...left]
+        : [head, ...left.slice().reverse(), ...right.slice().reverse()];
+      results["C-LOOK"] = { sequence: sanitizeDiskSequence(clookSeq), movement: headMovement(sanitizeDiskSequence(clookSeq)), note: "Circular LOOK avoids starvation and skips unused ends." };
+
+      return results;
+    }
+
+    function sanitizeDiskSequence(sequence) {
+      return sequence.filter((value, index) => index === 0 || value !== sequence[index - 1]);
+    }
+
+    function diskSvg(sequence, tracks) {
+      const width = 720;
+      const height = Math.max(250, sequence.length * 44);
+      const leftPad = 52;
+      const topPad = 24;
+      const usableWidth = width - leftPad - 30;
+      return `
+        <div class="svg-wrap">
+          <svg viewBox="0 0 ${width} ${height}" width="100%" height="${Math.min(height, 420)}" style="color: var(--text);">
+            <line x1="${leftPad}" y1="${topPad}" x2="${leftPad}" y2="${height - 24}" stroke="currentColor" stroke-width="1.4"></line>
+            ${sequence.map((track, index) => {
+              const x = leftPad + (track / Math.max(tracks - 1, 1)) * usableWidth;
+              const y = topPad + index * 40;
+              const next = sequence[index + 1];
+              const nextX = next !== undefined ? leftPad + (next / Math.max(tracks - 1, 1)) * usableWidth : null;
+              const nextY = next !== undefined ? topPad + (index + 1) * 40 : null;
+              return `
+                <g>
+                  <circle cx="${x}" cy="${y}" r="6" fill="${colorForIndex(index)}"></circle>
+                  <text x="${Math.min(x + 10, width - 40)}" y="${y - 10}" font-size="12" fill="currentColor">${track}</text>
+                  ${next !== undefined ? `<line x1="${x}" y1="${y}" x2="${nextX}" y2="${nextY}" stroke="#c05621" stroke-width="2.2"></line>` : ""}
+                </g>
+              `;
+            }).join("")}
+          </svg>
+        </div>
+      `;
+    }
+
+    function renderDiskResult(results, tracks) {
+      const entries = Object.entries(results);
+      const best = [...entries].sort((a, b) => a[1].movement - b[1].movement)[0];
+      const compareRows = entries.map(([name, value]) => [
+        name,
+        value.movement,
+        value.movement === best[1].movement ? "Best for this input" : value.note
+      ]);
+      return `
+        ${metricCards([
+          { label: "Best Total Head Movement", value: `${best[0]} (${best[1].movement})` },
+          { label: "Starvation Resistant", value: "C-SCAN / C-LOOK" },
+          { label: "Algorithms Compared", value: entries.length }
+        ])}
+        <div class="result-block">
+          <h3>Comparison Table</h3>
+          ${tableFromRows(["Algorithm", "Total Head Movement", "Efficiency / Insight"], compareRows)}
+        </div>
+        ${entries.map(([name, value]) => `
+          <div class="result-block">
+            <h3>${name}</h3>
+            <p class="small-muted"><strong>Seek Sequence:</strong> ${value.sequence.join(" → ")}</p>
+            <p class="small-muted"><strong>Total Head Movement:</strong> ${value.movement}</p>
+            ${diskSvg(value.sequence, tracks)}
+          </div>
+        `).join("")}
+      `;
+    }
+
+    function bindPage() {
+      const out = document.getElementById("pageOutput");
+
+      document.getElementById("pageSample").addEventListener("click", () => {
+        document.getElementById("pageFrames").value = 4;
+        document.getElementById("pageRefs").value = "1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5";
+        out.innerHTML = "";
+      });
+
+      document.getElementById("pageReset").addEventListener("click", () => {
+        document.getElementById("pageFrames").value = 3;
+        document.getElementById("pageRefs").value = "7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2";
+        out.innerHTML = "";
+      });
+
+      document.getElementById("pageRun").addEventListener("click", () => {
+        try {
+          const frames = Number(document.getElementById("pageFrames").value);
+          const refs = parseIntegerList(document.getElementById("pageRefs").value);
+          if (!Number.isFinite(frames) || frames <= 0) throw new Error("Number of frames must be greater than zero.");
+          if (!isValidNonNegativeList(refs)) throw new Error("Reference string must contain valid non-negative page numbers.");
+          const result = runPageAlgorithms(refs, frames);
+          out.innerHTML = renderPageResult(result, refs.length);
+        } catch (error) {
+          out.innerHTML = `<p class="status unsafe">${error.message}</p>`;
+        }
+      });
+    }
+
+    function runPageAlgorithms(refs, frameCount) {
+      const algorithms = {
+        FIFO: () => simulatePage(refs, frameCount, "FIFO"),
+        LRU: () => simulatePage(refs, frameCount, "LRU"),
+        Optimal: () => simulatePage(refs, frameCount, "Optimal")
+      };
+      const results = {};
+      for (const [name, fn] of Object.entries(algorithms)) results[name] = fn();
+      return results;
+    }
+
+    function simulatePage(refs, frameCount, algorithm) {
+      const frames = Array(frameCount).fill(null);
+      const steps = [];
+      const queue = [];
+      let faults = 0;
+      let hits = 0;
+
+      refs.forEach((page, index) => {
+        const hitIndex = frames.indexOf(page);
+        let action = "Hit";
+
+        if (hitIndex !== -1) {
+          hits++;
+          if (algorithm === "LRU") {
+            const qIndex = queue.indexOf(page);
+            if (qIndex !== -1) queue.splice(qIndex, 1);
+            queue.push(page);
+          }
+        } else {
+          faults++;
+          action = "Fault";
+          const emptyIndex = frames.indexOf(null);
+          if (emptyIndex !== -1) {
+            frames[emptyIndex] = page;
+          } else {
+            let replaceIndex = 0;
+            if (algorithm === "FIFO") {
+              const victim = queue.shift();
+              replaceIndex = frames.indexOf(victim);
+            } else if (algorithm === "LRU") {
+              const victim = queue.shift();
+              replaceIndex = frames.indexOf(victim);
+            } else {
+              let farthest = -1;
+              frames.forEach((framePage, i) => {
+                const nextUse = refs.slice(index + 1).indexOf(framePage);
+                const distance = nextUse === -1 ? Infinity : nextUse;
+                if (distance > farthest) {
+                  farthest = distance;
+                  replaceIndex = i;
+                }
+              });
+            }
+            frames[replaceIndex] = page;
+          }
+          if (algorithm === "FIFO") queue.push(page);
+          if (algorithm === "LRU") {
+            const qIndex = queue.indexOf(page);
+            if (qIndex !== -1) queue.splice(qIndex, 1);
+            queue.push(page);
+          }
+        }
+
+        if (algorithm === "FIFO" && hitIndex !== -1) {
+          // FIFO queue stays untouched on hit.
+        }
+        if (algorithm === "Optimal" && hitIndex === -1 && !queue.includes(page)) {
+          // No queue needed for Optimal; this block intentionally left empty.
+        }
+
+        steps.push({
+          step: index + 1,
+          page,
+          frames: [...frames],
+          action
+        });
+      });
+
+      return {
+        steps,
+        faults,
+        hits,
+        hitRatio: hits / refs.length,
+        missRatio: faults / refs.length
+      };
+    }
+
+    function renderPageResult(results, refLength) {
+      const best = Object.entries(results).sort((a, b) => a[1].faults - b[1].faults)[0];
+      const comparisonRows = Object.entries(results).map(([name, res]) => [
+        name,
+        res.faults,
+        res.hits,
+        format(res.hitRatio),
+        format(res.missRatio)
+      ]);
+      return `
+        ${metricCards([
+          { label: "Best Algorithm", value: `${best[0]} (${best[1].faults} faults)` },
+          { label: "Reference Length", value: refLength },
+          { label: "Algorithms Compared", value: Object.keys(results).length }
+        ])}
+        <div class="result-block">
+          <h3>Final Comparison</h3>
+          ${tableFromRows(["Algorithm", "Page Faults", "Hits", "Hit Ratio", "Miss Ratio"], comparisonRows)}
+        </div>
+        ${Object.entries(results).map(([name, res]) => `
+          <div class="result-block">
+            <h3>${name}</h3>
+            ${tableFromRows(
+              ["Step", "Page", ...res.steps[0].frames.map((_, i) => `Frame ${i + 1}`), "Fault / Hit"],
+              res.steps.map(step => [step.step, step.page, ...step.frames.map(value => value ?? "-"), step.action])
+            )}
+          </div>
+        `).join("")}
+      `;
+    }
+
+    document.getElementById("homeBtn").addEventListener("click", () => {
+      state.active = "home";
+      renderNav();
+      renderModule();
+    });
+
+    document.getElementById("themeBtn").addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      document.getElementById("themeBtn").textContent = document.body.classList.contains("dark") ? "Light Mode" : "Dark Mode";
+    });
+
+    renderNav();
+    renderModule();
+  </script>
+</body>
+</html>
